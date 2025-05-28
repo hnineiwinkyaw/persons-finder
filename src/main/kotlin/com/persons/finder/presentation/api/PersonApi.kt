@@ -5,6 +5,7 @@ import com.persons.finder.presentation.dto.AddLocationRequest
 import com.persons.finder.presentation.dto.AddLocationResponse
 import com.persons.finder.presentation.dto.CreatePersonRequest
 import com.persons.finder.presentation.dto.CreatePersonResponse
+import com.persons.finder.presentation.dto.FindNearbyPersonsResponse
 import com.persons.finder.presentation.dto.GetPersonResponse
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import javax.validation.Valid
+import javax.validation.constraints.NotNull
 
 @RequestMapping("api/v1/persons")
 interface PersonApi {
@@ -88,4 +90,26 @@ interface PersonApi {
         @RequestBody
         request: AddLocationRequest,
     ): ResponseEntity<AddLocationResponse>
+
+    @Operation(summary = "Find persons near a location")
+    @ApiResponses(
+        ApiResponse(responseCode = "200", description = "Nearby persons"),
+        ApiResponse(responseCode = "400", description = "Invalid input"),
+    )
+    @GetMapping("/nearby")
+    fun findNearbyPersons(
+        @RequestParam @NotNull @Valid
+        lat: Double,
+        @RequestParam @NotNull @Valid
+        lon: Double,
+        @RequestParam @NotNull @Valid
+        radiusKm: Double,
+    ): ResponseEntity<FindNearbyPersonsResponse>
+
+    @Operation(summary = "Seed data")
+    @GetMapping("/seed")
+    fun seedData(
+        @RequestParam @NotNull @Valid
+        size: Long,
+    ): ResponseEntity<Map<String, String>>
 }

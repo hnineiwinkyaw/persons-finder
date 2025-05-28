@@ -3,10 +3,10 @@ package com.persons.finder.common.exception
 import com.persons.finder.common.dto.ErrorBody
 import com.persons.finder.common.dto.ErrorResponse
 import com.persons.finder.common.enum.ErrorCode
-import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.http.converter.HttpMessageNotReadableException
 import org.springframework.web.bind.MethodArgumentNotValidException
+import org.springframework.web.bind.MissingServletRequestParameterException
 import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.context.request.WebRequest
@@ -15,57 +15,32 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 @ControllerAdvice
 class ExceptionHandler {
 
-    @ExceptionHandler(MethodArgumentNotValidException::class)
+    @ExceptionHandler
     fun handleValidationExceptions(
-        ex: MethodArgumentNotValidException,
+        ex: java.lang.Exception,
         request: WebRequest,
     ): ResponseEntity<ErrorResponse> {
-        val message = ex.bindingResult.allErrors
-            .firstOrNull()?.defaultMessage ?: "Validation error"
+        val (errorCode, message) = when (ex) {
+            is MethodArgumentNotValidException ->
+                ErrorCode.VALIDATION_ERROR to (ex.bindingResult.allErrors.firstOrNull()?.defaultMessage ?: "Validation error")
+            is MissingServletRequestParameterException ->
+                ErrorCode.INVALID_INPUT to "Missing required parameter: ${ex.parameterName}"
+            is PersonNotFoundException ->
+                ErrorCode.ENTITY_NOT_FOUND to (ex.message ?: "No persons found")
+            is MethodArgumentTypeMismatchException ->
+                ErrorCode.INVALID_INPUT to "Invalid value for parameter '${ex.name}'"
+            is HttpMessageNotReadableException ->
+                ErrorCode.INVALID_INPUT to "Invalid Request Body"
+            else ->
+                ErrorCode.VALIDATION_ERROR to "Invalid request body or parameters"
+        }
 
         val errorResponse = ErrorResponse(
             error = ErrorBody(
-                code = ErrorCode.VALIDATION_ERROR.code,
+                code = errorCode.code,
                 message = message,
             ),
         )
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse)
-    }
-
-    @ExceptionHandler(PersonNotFoundException::class)
-    fun handleNotFound(ex: PersonNotFoundException, request: WebRequest): ResponseEntity<ErrorResponse> {
-        val errorResponse = ErrorResponse(
-            error = ErrorBody(
-                code = ErrorCode.ENTITY_NOT_FOUND.code,
-                message = ex.message ?: "No persons found",
-            ),
-        )
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse)
-    }
-
-    @ExceptionHandler(MethodArgumentTypeMismatchException::class)
-    fun handleTypeMismatchException(
-        ex: MethodArgumentTypeMismatchException,
-        request: WebRequest,
-    ): ResponseEntity<ErrorResponse> {
-        val message = "Invalid value for parameter '${ex.name}'"
-        val errorResponse = ErrorResponse(
-            error = ErrorBody(
-                code = ErrorCode.INVALID_INPUT.code,
-                message = message,
-            ),
-        )
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse)
-    }
-
-    @ExceptionHandler(HttpMessageNotReadableException::class)
-    fun handleHttpMessageNotReadable(ex: HttpMessageNotReadableException): ResponseEntity<ErrorResponse> {
-        val errorResponse = ErrorResponse(
-            error = ErrorBody(
-                code = ErrorCode.INVALID_INPUT.code,
-                message = "Invalid Request Body",
-            ),
-        )
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse)
+        return ResponseEntity.status(errorCode.httpStatus).body(errorResponse)
     }
 }

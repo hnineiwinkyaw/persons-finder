@@ -3,17 +3,23 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.persons.finder.data.Location
 import com.persons.finder.data.Person
 import com.persons.finder.presentation.dto.CreatePersonRequest
+import com.persons.finder.repository.LocationRepository
 import com.persons.finder.repository.PersonRepository
+import com.persons.finder.seed.DbSeeder
+import org.hibernate.validator.internal.util.Contracts.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
+import org.springframework.http.ResponseEntity.status
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
 import org.springframework.test.web.servlet.put
+import kotlin.system.measureTimeMillis
 
 class PersonControllerTest {
 
@@ -29,6 +35,12 @@ class PersonControllerTest {
 
         @Autowired
         lateinit var personRepository: PersonRepository
+
+        @Autowired
+        lateinit var locationRepository: LocationRepository
+
+        @Autowired
+        lateinit var seeder: DbSeeder
 
         @BeforeEach
         fun setup() {
@@ -212,6 +224,96 @@ class PersonControllerTest {
                     jsonPath("$.data.longitude") { value(request.longitude) }
                     jsonPath("$.transactionId") { exists() }
                 }
+        }
+
+        @Test
+        fun `GET nearby persons should return nearby persons sorted by distance`() {
+            // Given - Seed data
+            personRepository.save(Person(id = 1, name = "Hnin"))
+            locationRepository.save(Location(personId = 1, latitude = 10.0, longitude = 10.0))
+
+            personRepository.save(Person(id = 2, name = "Win"))
+            locationRepository.save(Location(personId = 2, latitude = 10.1, longitude = 10.1))
+
+            val queryLat = 10.0
+            val queryLon = 10.0
+            val radiusKm = 20.0
+
+            mockMvc.get("/api/v1/persons/nearby") {
+                param("lat", queryLat.toString())
+                param("lon", queryLon.toString())
+                param("radiusKm", radiusKm.toString())
+                accept(MediaType.APPLICATION_JSON)
+            }
+                .andExpect {
+                    status { isOk() }
+                    jsonPath("$.size()") { value(2) }
+                    jsonPath("$.data.[0].location.personId") { value(1) } // closer person first
+                    jsonPath("$.data.[1].location.personId") { value(2) }
+                }
+        }
+
+        @Test
+        fun `GET nearby persons should return empty list when no persons are nearby`() {
+            personRepository.save(Person(id = 1, name = "FarAway"))
+            locationRepository.save(Location(personId = 1, latitude = 50.0, longitude = 50.0))
+
+            mockMvc.get("/api/v1/persons/nearby") {
+                param("lat", "10.0")
+                param("lon", "10.0")
+                param("radiusKm", "5.0")
+                accept(MediaType.APPLICATION_JSON)
+            }
+                .andExpect {
+                    status { isOk() }
+                    jsonPath("$.data.size()") { value(0) }
+                }
+        }
+
+        @Test
+        fun `GET nearby persons should return 400 for missing parameters`() {
+            mockMvc.get("/api/v1/persons/nearby") {
+                // missing params
+                accept(MediaType.APPLICATION_JSON)
+            }
+                .andExpect {
+                    status { isBadRequest() }
+                    jsonPath("$.error.code") { value("INVALID_INPUT") }
+                }
+        }
+
+        @Test
+        fun `GET nearby persons should return 400 for invalid parameters`() {
+            mockMvc.get("/api/v1/persons/nearby") {
+                param("lat", "abc") // invalid
+                param("lon", "10.0")
+                param("radiusKm", "20.0")
+                accept(MediaType.APPLICATION_JSON)
+            }
+                .andExpect {
+                    status { isBadRequest() }
+                    jsonPath("$.error.code") { value("INVALID_INPUT") }
+                }
+        }
+
+        // performance testing
+        @Test
+        fun `GET nearby persons should return nearby persons sorted by distance from the db seeded with 1M rows`() {
+            // Seed data 1M
+            seeder.seedData(1000000)
+            val timeTaken = measureTimeMillis {
+                mockMvc.perform(
+                    org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/v1/persons/nearby")
+                        .param("lat", "10.0")
+                        .param("lon", "20.0")
+                        .param("radiusKm", "5")
+                        .accept(MediaType.APPLICATION_JSON),
+                ).andExpect {
+                    status(HttpStatus.OK)
+                }
+            }
+
+            assertTrue(timeTaken < 300, "Expected query to complete under 500ms but took $timeTaken ms")
         }
     }
 }

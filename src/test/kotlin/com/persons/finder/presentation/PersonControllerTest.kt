@@ -5,6 +5,7 @@ import com.persons.finder.data.Person
 import com.persons.finder.presentation.dto.CreatePersonRequest
 import com.persons.finder.repository.LocationRepository
 import com.persons.finder.repository.PersonRepository
+import com.persons.finder.seed.DbSeeder
 import org.hibernate.validator.internal.util.Contracts.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -18,7 +19,6 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
 import org.springframework.test.web.servlet.put
-import kotlin.random.Random
 import kotlin.system.measureTimeMillis
 
 class PersonControllerTest {
@@ -39,32 +39,15 @@ class PersonControllerTest {
         @Autowired
         lateinit var locationRepository: LocationRepository
 
+        @Autowired
+        lateinit var seeder: DbSeeder
+
         @BeforeEach
         fun setup() {
             val person1 = Person(id = 1L, name = "Hnin")
             val person2 = Person(id = 2L, name = "Win")
 
             personRepository.saveAll(listOf(person1, person2))
-        }
-
-        fun seedData(total: Long) {
-            val batchSize = 10_000L
-
-            for (i in 1..total step batchSize) {
-                val persons = (i until i + batchSize).map {
-                    Person(name = "Person $it")
-                }
-                val savedPersons = personRepository.saveAll(persons)
-
-                val locations = savedPersons.map {
-                    Location(
-                        personId = it.id!!,
-                        latitude = Random.nextDouble(-90.0, 90.0),
-                        longitude = Random.nextDouble(-180.0, 180.0),
-                    )
-                }
-                locationRepository.saveAll(locations)
-            }
         }
 
         @Test
@@ -317,7 +300,7 @@ class PersonControllerTest {
         @Test
         fun `GET nearby persons should return nearby persons sorted by distance from the db seeded with 1M rows`() {
             // Seed data 1M
-            seedData(1000000)
+            seeder.seedData(1000000)
             val timeTaken = measureTimeMillis {
                 mockMvc.perform(
                     org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/v1/persons/nearby")
@@ -329,7 +312,8 @@ class PersonControllerTest {
                     status(HttpStatus.OK)
                 }
             }
-            assertTrue(timeTaken < 500, "Expected query to complete under 500ms but took $timeTaken ms")
+
+            assertTrue(timeTaken < 300, "Expected query to complete under 500ms but took $timeTaken ms")
         }
     }
 }

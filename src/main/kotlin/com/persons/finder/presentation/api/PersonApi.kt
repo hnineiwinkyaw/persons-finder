@@ -105,4 +105,11 @@ interface PersonApi {
         @RequestParam @NotNull @Valid
         radiusKm: Double,
     ): ResponseEntity<FindNearbyPersonsResponse>
+
+    @Operation(summary = "Seed data")
+    @GetMapping("/seed")
+    fun seedData(
+        @RequestParam @NotNull @Valid
+        size: Long,
+    ): ResponseEntity<Map<String, String>>
 }

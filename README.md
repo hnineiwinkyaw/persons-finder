@@ -1,8 +1,8 @@
-## About the Project
+### 📌 About the Project
 
 This project implements the backend for a mobile application called **Persons Finder**, designed to help users locate people nearby based on their geographical location. The system exposes a REST API that allows clients to create and update persons’ profiles and their current locations, as well as search for people within a specified radius of a given location. 
 
-## What Has Been Implemented
+### ✅ What Has Been Implemented
 
 The project includes the following REST API endpoints, designed to meet the specified requirements:
 
@@ -23,14 +23,21 @@ An endpoint provided to seed the database with a configurable amount of sample p
 
 All APIs can be explored in the Swagger UI after running the project: [Swagger UI](http://localhost:8080/swagger-ui/index.html#/)
 
-## Development Highlights
+### 💡 Development Highlights
 
 - The application uses an H2 in-memory database.
 - Comprehensive test cases have been implemented.
-- The project has a high test coverage with 94% of instructions, 80% of branches, and 86% of lines covered, measured using [JaCoCo](https://www.jacoco.org/jacoco/) with reports available in the `toBeUpdated` directory.  
+- The project has a high test coverage with 94% of instructions, 80% of branches, and 86% of lines covered, measured using [JaCoCo](https://www.jacoco.org/jacoco/) with reports available in the `test-report/html/index.html` directory.  
 - Code quality and consistency are maintained using Spotless Kotlin formatting.  
 - API contracts are defined upfront via interfaces for clarity and early alignment, allowing controllers to implement them without blocking collaborators or integrations.  
 - Database performance is optimized by adding indexes on location-related columns to speed up queries.  
 - A large-scale seeding test was performed, successfully query nearby persons from 1 million records in under 300 ms, demonstrating the system's scalability.  
 - Exception handling is centralized with a global handler, ensuring that all errors are captured and responded to uniformly.  
 - API responses are standardized and unified, with each transaction assigned a unique transaction ID to facilitate debugging and integration with upstream services.  
+
+### 🚧  Further Development
+
+- Currently, the system is tested by seeding with **1 million records**. Attempts to insert **10 million** records resulted in **Java heap space (OOM)** errors. This can be further tested by **adjusting H2 memory size adjustment** or switching to a file-based or external database.
+- **Pagination** for the `/api/v1/persons/nearby` API is **not yet implemented**.  
+  Since this endpoint uses the **Haversine formula** to calculate and sort by geographic distance, paginating directly from the database would result in **inaccurate distance-based ordering**. This will require further research for an accurate and efficient solution.
+- A **remove location** endpoint is currently **not implemented** and can be added in future enhancements.

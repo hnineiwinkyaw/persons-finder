@@ -5,16 +5,21 @@ import com.persons.finder.data.Person
 import com.persons.finder.presentation.dto.CreatePersonRequest
 import com.persons.finder.repository.LocationRepository
 import com.persons.finder.repository.PersonRepository
+import org.hibernate.validator.internal.util.Contracts.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
+import org.springframework.http.ResponseEntity.status
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
 import org.springframework.test.web.servlet.put
+import kotlin.random.Random
+import kotlin.system.measureTimeMillis
 
 class PersonControllerTest {
 
@@ -40,6 +45,26 @@ class PersonControllerTest {
             val person2 = Person(id = 2L, name = "Win")
 
             personRepository.saveAll(listOf(person1, person2))
+        }
+
+        fun seedData(total: Long) {
+            val batchSize = 10_000L
+
+            for (i in 1..total step batchSize) {
+                val persons = (i until i + batchSize).map {
+                    Person(name = "Person $it")
+                }
+                val savedPersons = personRepository.saveAll(persons)
+
+                val locations = savedPersons.map {
+                    Location(
+                        personId = it.id!!,
+                        latitude = Random.nextDouble(-90.0, 90.0),
+                        longitude = Random.nextDouble(-180.0, 180.0),
+                    )
+                }
+                locationRepository.saveAll(locations)
+            }
         }
 
         @Test
@@ -286,6 +311,25 @@ class PersonControllerTest {
                     status { isBadRequest() }
                     jsonPath("$.error.code") { value("INVALID_INPUT") }
                 }
+        }
+
+        // performance testing
+        @Test
+        fun `GET nearby persons should return nearby persons sorted by distance from the db seeded with 1M rows`() {
+            // Seed data 1M
+            seedData(1000000)
+            val timeTaken = measureTimeMillis {
+                mockMvc.perform(
+                    org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/v1/persons/nearby")
+                        .param("lat", "10.0")
+                        .param("lon", "20.0")
+                        .param("radiusKm", "5")
+                        .accept(MediaType.APPLICATION_JSON),
+                ).andExpect {
+                    status(HttpStatus.OK)
+                }
+            }
+            assertTrue(timeTaken < 500, "Expected query to complete under 500ms but took $timeTaken ms")
         }
     }
 }

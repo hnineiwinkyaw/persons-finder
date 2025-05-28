@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import javax.validation.Valid
+import javax.validation.constraints.NotNull
 
 @RequestMapping("api/v1/persons")
 interface PersonApi {
@@ -97,8 +98,11 @@ interface PersonApi {
     )
     @GetMapping("/nearby")
     fun findNearbyPersons(
-        @RequestParam lat: Double,
-        @RequestParam lon: Double,
-        @RequestParam radiusKm: Double,
+        @RequestParam @NotNull @Valid
+        lat: Double,
+        @RequestParam @NotNull @Valid
+        lon: Double,
+        @RequestParam @NotNull @Valid
+        radiusKm: Double,
     ): ResponseEntity<FindNearbyPersonsResponse>
 }

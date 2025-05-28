@@ -10,6 +10,7 @@ import com.persons.finder.presentation.dto.AddLocationRequest
 import com.persons.finder.presentation.dto.AddLocationResponse
 import com.persons.finder.presentation.dto.CreatePersonRequest
 import com.persons.finder.presentation.dto.CreatePersonResponse
+import com.persons.finder.presentation.dto.FindNearbyPersonsResponse
 import com.persons.finder.presentation.dto.GetPersonResponse
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -46,5 +47,10 @@ class PersonController(private val personService: PersonsService, private val lo
     override fun addLocation(id: Long, request: AddLocationRequest): ResponseEntity<AddLocationResponse> {
         val location = locationService.addLocation(Location(latitude = request.latitude!!, longitude = request.longitude!!, personId = id))
         return ResponseEntity.ok(AddLocationResponse(data = location))
+    }
+
+    override fun findNearbyPersons(lat: Double, lon: Double, radiusKm: Double): ResponseEntity<FindNearbyPersonsResponse> {
+        val nearby = locationService.findAround(lat, lon, radiusKm)
+        return ResponseEntity.ok(FindNearbyPersonsResponse(data = nearby))
     }
 }

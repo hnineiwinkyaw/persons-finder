@@ -5,6 +5,7 @@ import com.persons.finder.presentation.dto.AddLocationRequest
 import com.persons.finder.presentation.dto.AddLocationResponse
 import com.persons.finder.presentation.dto.CreatePersonRequest
 import com.persons.finder.presentation.dto.CreatePersonResponse
+import com.persons.finder.presentation.dto.FindNearbyPersonsResponse
 import com.persons.finder.presentation.dto.GetPersonResponse
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
@@ -88,4 +89,16 @@ interface PersonApi {
         @RequestBody
         request: AddLocationRequest,
     ): ResponseEntity<AddLocationResponse>
+
+    @Operation(summary = "Find persons near a location")
+    @ApiResponses(
+        ApiResponse(responseCode = "200", description = "Nearby persons"),
+        ApiResponse(responseCode = "400", description = "Invalid input"),
+    )
+    @GetMapping("/nearby")
+    fun findNearbyPersons(
+        @RequestParam lat: Double,
+        @RequestParam lon: Double,
+        @RequestParam radiusKm: Double,
+    ): ResponseEntity<FindNearbyPersonsResponse>
 }

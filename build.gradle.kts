@@ -6,6 +6,7 @@ plugins {
 	id("com.diffplug.spotless") version "6.25.0"
 	kotlin("jvm") version "1.6.21"
 	kotlin("plugin.spring") version "1.6.21"
+	jacoco
 }
 
 group = "com.persons.finder"
@@ -14,6 +15,10 @@ java.sourceCompatibility = JavaVersion.VERSION_11
 
 repositories {
 	mavenCentral()
+}
+
+jacoco {
+	toolVersion = "0.8.11"
 }
 
 dependencies {
@@ -54,4 +59,15 @@ tasks.withType<KotlinCompile> {
 
 tasks.withType<Test> {
 	useJUnitPlatform()
+	finalizedBy(tasks.jacocoTestReport)
+}
+
+tasks.jacocoTestReport {
+	dependsOn(tasks.test)
+
+	reports {
+		xml.required.set(true)
+		html.required.set(true)
+		csv.required.set(false)
+	}
 }

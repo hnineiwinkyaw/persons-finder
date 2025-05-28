@@ -1,108 +1,43 @@
-# 👥 Persons Finder – Backend Challenge
+### 📌 About the Project
 
-Welcome to the **Persons Finder** backend challenge! This project simulates the backend for a mobile app that helps users find people around them.
+This project implements the backend for a mobile application called **Persons Finder**, designed to help users locate people nearby based on their geographical location. The system exposes a REST API that allows clients to create and update persons’ profiles and their current locations, as well as search for people within a specified radius of a given location. 
 
-Your task is to implement a REST API that allows clients to create, update, and search for people based on location and other criteria.
+### ✅ What Has Been Implemented
 
----
+The project includes the following REST API endpoints, designed to meet the specified requirements:
 
-## 📌 Requirements
+#### POST /api/v1/persons  
+Creates a new person record in the system. Accepts person details in the request body and returns the created person with a unique identifier.
 
-Implement the following endpoints:
+#### PUT /api/v1/persons/{id}/location  
+Updates the location data (latitude and longitude) for the specified person ID.
 
-### ➕ `POST /persons`
+#### GET /api/v1/persons  
+Retrieves one or more persons by their IDs. Supports multiple `id` query parameters to fetch a list of persons in a single request.
 
-Create a new person.
+#### GET /api/v1/persons/nearby  
+Finds persons within a specified radius (in kilometers) around a given latitude and longitude. Returns a list of persons sorted by their distance from the query location.
 
----
+#### GET /api/v1/persons/seed  
+An endpoint provided to seed the database with a configurable amount of sample person and location data, primarily intended for testing and benchmarking purposes.
 
-### ✏️ `PUT /persons/{id}/location`
+All APIs can be explored in the Swagger UI after running the project: [Swagger UI](http://localhost:8080/swagger-ui/index.html#/)
 
-Update (or create if not exists) a person's current **latitude** and **longitude**.
+### 💡 Development Highlights
 
----
+- The application uses an H2 in-memory database.
+- Comprehensive test cases have been implemented.
+- The project has a high test coverage with 94% of instructions, 80% of branches, and 86% of lines covered, measured using [JaCoCo](https://www.jacoco.org/jacoco/) with reports available in the `test-report/html/index.html` directory.  
+- Code quality and consistency are maintained using Spotless Kotlin formatting.  
+- API contracts are defined upfront via interfaces for clarity and early alignment, allowing controllers to implement them without blocking collaborators or integrations.  
+- Database performance is optimized by adding indexes on location-related columns to speed up queries.  
+- A large-scale seeding test was performed, successfully query nearby persons from 1 million records in under 300 ms, demonstrating the system's scalability.  
+- Exception handling is centralized with a global handler, ensuring that all errors are captured and responded to uniformly.  
+- API responses are standardized and unified, with each transaction assigned a unique transaction ID to facilitate debugging and integration with upstream services.  
 
-### 🔍 `GET /persons/nearby`
+### 🚧  Further Development
 
-Find people around a **query location**, specified using the following query parameters:
-
-* `lat`: latitude
-* `lon`: longitude
-* `radiusKm`: radius in kilometres
-
-> 🧠 **Extra challenge**: Return the list **sorted by distance** to the query point.
-
----
-
-### 👤 `GET /persons`
-
-Retrieve one or more persons by their IDs. Accepts:
-
-* `id`: one or more person IDs (e.g., `?id=1&id=2`)
-
----
-
-## 📦 Expected Output
-
-All responses must be in **valid JSON format**, following clean and consistent REST API design principles.
-
----
-
-## 🧱 What You Need to Build
-
-* Domain models: `Person`, `Location`, etc.
-* Services for saving, updating, and querying data
-* In-memory storage or a basic persistent layer
-* Proper project structure (e.g. controller / service / repository)
-* Extra bonus if you use UseCase pattern (Controller -> Use Case (business logic) -> Service -> Repository)
-
----
-
-## 🧪 Bonus Points
-
-### ✅ Testing
-
-* Include **unit tests** for service logic
-* Include **integration tests** for API endpoints
-* Use a test framework like **JUnit**, **MockK**, or **Mockito**
-
----
-
-### 🧠 Scalability Challenge
-
-* Seed the system with **1 million**, **10 million**, and **100 million** records
-* Benchmark and **optimise** the `GET /persons/nearby` endpoint
-* Explain any indexing or query optimisation strategies used
-
----
-
-### 📚 Clean Code
-
-* Use **DTOs** for API request and response bodies
-* Apply proper **validation**, **error handling**, and maintain clean separation of concerns
-
----
-
-## ✅ Getting Started
-
-```bash
-git clone https://github.com/leonardoduartelana/persons-finder.git
-cd persons-finder
-```
-
-Implement your solution and push it to your **own GitHub repository**.
-
----
-
-## 📬 Submission & Questions
-
-* Submit the link to your GitHub repository
-* For any questions, email: [leo@emerge.nz](mailto:leo@emerge.nz)
-
----
-
-## 💡 Tips
-
-* Use **OpenAPI/Swagger** to document your APIs (optional, but encouraged)
-* Handle edge cases like missing locations or malformed input
-* Design the system **as if it were going into production**
+- Currently, the system is tested by seeding with **1 million records**. Attempts to insert **10 million** records resulted in **Java heap space (OOM)** errors. This can be further tested by **adjusting H2 memory size adjustment** or switching to a file-based or external database.
+- **Pagination** for the `/api/v1/persons/nearby` API is **not yet implemented**.  
+  Since this endpoint uses the **Haversine formula** to calculate and sort by geographic distance, paginating directly from the database would result in **inaccurate distance-based ordering**. This will require further research for an accurate and efficient solution.
+- A **remove location** endpoint is currently **not implemented** and can be added in future enhancements.

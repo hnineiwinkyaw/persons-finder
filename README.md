@@ -27,7 +27,9 @@ All APIs can be explored in the Swagger UI after running the project: [Swagger U
 
 - The application uses an H2 in-memory database.
 - Comprehensive test cases have been implemented.
-- The project has a high test coverage with 94% of instructions, 80% of branches, and 86% of lines covered, measured using [JaCoCo](https://www.jacoco.org/jacoco/) with reports available in the `test-report/html/index.html` directory.  
+- The project has a high test coverage with 94% of instructions, 80% of branches, and 86% of lines covered, measured using [JaCoCo](https://www.jacoco.org/jacoco/). 
+<img width="1433" alt="image" src="https://github.com/user-attachments/assets/49ec5540-9345-4587-b101-00906f7fa6d8" />
+
 - Code quality and consistency are maintained using Spotless Kotlin formatting.  
 - API contracts are defined upfront via interfaces for clarity and early alignment, allowing controllers to implement them without blocking collaborators or integrations.  
 - Database performance is optimized by adding indexes on location-related columns to speed up queries.  
